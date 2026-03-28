@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Callable, Concatenate, ParamSpec, TypeVar
+from typing import Callable, Concatenate, ParamSpec, Sequence, TypeVar
 
 from talon import app, cron, fs, registry
 
@@ -30,9 +30,14 @@ R = TypeVar("R")
 
 def auto_construct_defaults(
     spoken_forms: dict[str, ListToSpokenForms],
-    handle_new_values: Callable[[str, list[SpokenFormEntry]], None],
+    handle_new_values: Callable[[str, Sequence[SpokenFormEntry]], None],
     f: Callable[
-        Concatenate[str, ListToSpokenForms, Callable[[list[SpokenFormEntry]], None], P],
+        Concatenate[
+            str,
+            ListToSpokenForms,
+            Callable[[Sequence[SpokenFormEntry]], None],
+            P,
+        ],
         R,
     ],
 ):
@@ -98,7 +103,7 @@ def update():
     initialized = False
 
     # Maps from csv name to list of SpokenFormEntry
-    custom_spoken_forms: dict[str, list[SpokenFormEntry]] = {}
+    custom_spoken_forms: dict[str, Sequence[SpokenFormEntry]] = {}
     spoken_forms_output = SpokenFormsOutput()
     spoken_forms_output.init()
     graphemes_talon_list = get_graphemes_talon_list()
@@ -120,7 +125,7 @@ def update():
             ]
         )
 
-    def handle_new_values(csv_name: str, values: list[SpokenFormEntry]):
+    def handle_new_values(csv_name: str, values: Sequence[SpokenFormEntry]):
         custom_spoken_forms[csv_name] = values
         if initialized:
             # On first run, we just do one update at the end, so we suppress
@@ -165,39 +170,15 @@ def update():
             ],
             default_list_name="scope_type",
         ),
-        # DEPRECATED @ 2025-02-01
-        handle_csv(
-            "experimental/wrapper_snippets.csv",
-            deprecated=True,
-            allow_unknown_values=True,
-            default_list_name="wrapper_snippet",
-        ),
-        handle_csv(
-            "experimental/insertion_snippets.csv",
-            deprecated=True,
-            allow_unknown_values=True,
-            default_list_name="insertion_snippet_no_phrase",
-        ),
-        handle_csv(
-            "experimental/insertion_snippets_single_phrase.csv",
-            deprecated=True,
-            allow_unknown_values=True,
-            default_list_name="insertion_snippet_single_phrase",
-        ),
-        handle_csv(
-            "experimental/miscellaneous.csv",
-            deprecated=True,
-        ),
-        # ---
         handle_csv(
             "experimental/actions_custom.csv",
-            headers=[SPOKEN_FORM_HEADER, "VSCode command"],
+            headers=(SPOKEN_FORM_HEADER, "VSCode command"),
             allow_unknown_values=True,
             default_list_name="custom_action",
         ),
         handle_csv(
             "experimental/regex_scope_types.csv",
-            headers=[SPOKEN_FORM_HEADER, "Regex"],
+            headers=(SPOKEN_FORM_HEADER, "Regex"),
             allow_unknown_values=True,
             default_list_name="custom_regex_scope_type",
             pluralize_lists=["custom_regex_scope_type"],
